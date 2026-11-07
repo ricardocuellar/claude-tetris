@@ -12,7 +12,7 @@ Vanilla JavaScript Tetris using HTML5 Canvas. No dependencies, no build step, no
 
 ## Architecture
 
-All game logic lives in a single script, `game.js` (loaded by `index.html`, styled by `style.css`). It relies on DOM element ids defined in `index.html` (`board`, `next-canvas`, `score`, `lines`, `level`, `overlay`, `overlay-title`, `overlay-score`, `restart-btn`) — renaming any of them requires updating the lookups at the top of `game.js`.
+All game logic lives in a single script, `game.js` (loaded by `index.html`, styled by `style.css`). It relies on DOM element ids defined in `index.html` (`board`, `next-canvas`, `score`, `lines`, `level`, `overlay`, `overlay-title`, `overlay-score`, `restart-btn`, `theme-toggle`, `theme-label`) — renaming any of them requires updating the lookups at the top of `game.js`.
 
 Key design points:
 - **Global mutable state** (`board`, `current`, `next`, `score`, `lines`, `level`, `paused`, `gameOver`, `dropInterval`, ...) is declared in one `let` and reset by `init()`, which is also the restart handler.
@@ -21,4 +21,5 @@ Key design points:
 - **Piece lifecycle**: `lockPiece()` → `merge()` → `clearLines()` (updates score/level/`dropInterval`) → `spawn()` (promotes `next`, detects game over when the spawn position collides).
 - **Rotation** is clockwise matrix rotation with simple horizontal wall kicks `[0,-1,1,-2,2]` (not SRS).
 - **Scoring**: line clears use `LINE_SCORES × level`; soft drop gives +1 per cell, hard drop +2 per cell. Level = `floor(lines/10)+1`; `dropInterval = max(100, 1000 - (level-1)*90)`.
-- **Input**: single `keydown` listener (arrows, `X` rotate, `Space` hard drop, `P` pause).
+- **Input**: single `keydown` listener (arrows, `X` rotate, `Space` hard drop, `P` pause, `T` theme).
+- **Theming**: colors are CSS variables in `style.css` (`:root` = dark, `:root[data-theme="light"]`). `applyTheme()` in `game.js` sets `data-theme`, persists to `localStorage` (`tetris-theme`, default dark), reads `--grid`/`--block-edge` for canvas drawing and repaints. `T` or the header switch toggles it.
