@@ -39,6 +39,13 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
+const themeToggle = document.getElementById('theme-toggle');
+const themeLabel = document.getElementById('theme-label');
+
+const THEME_KEY = 'tetris-theme';
+let theme = 'dark';
+let gridColor = '#22222e';
+let blockEdge = 'none';
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 
@@ -165,11 +172,16 @@ function drawBlock(context, x, y, colorIndex, size, alpha) {
   // highlight
   context.fillStyle = 'rgba(255,255,255,0.12)';
   context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+  if (blockEdge !== 'none') {
+    context.strokeStyle = blockEdge;
+    context.lineWidth = 1;
+    context.strokeRect(x * size + 1.5, y * size + 1.5, size - 3, size - 3);
+  }
   context.globalAlpha = 1;
 }
 
 function drawGrid() {
-  ctx.strokeStyle = '#22222e';
+  ctx.strokeStyle = gridColor;
   ctx.lineWidth = 0.5;
   for (let c = 1; c < COLS; c++) {
     ctx.beginPath();
@@ -216,6 +228,27 @@ function drawNext() {
   for (let r = 0; r < shape.length; r++)
     for (let c = 0; c < shape[r].length; c++)
       drawBlock(nextCtx, offX + c, offY + r, shape[r][c], NB);
+}
+
+function applyTheme(name, persist) {
+  theme = name === 'light' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = theme;
+  const isLight = theme === 'light';
+  themeToggle.setAttribute('aria-checked', String(isLight));
+  themeLabel.textContent = isLight ? 'Modo oscuro' : 'Modo claro';
+  themeToggle.setAttribute('aria-label', themeLabel.textContent);
+  const styles = getComputedStyle(document.documentElement);
+  gridColor = styles.getPropertyValue('--grid').trim();
+  blockEdge = styles.getPropertyValue('--block-edge').trim();
+  if (persist) {
+    try { localStorage.setItem(THEME_KEY, theme); } catch (_) {}
+  }
+  // Repintar de inmediato (el canvas no se redibuja en pausa o game over)
+  if (current && next) { draw(); drawNext(); }
+}
+
+function toggleTheme() {
+  applyTheme(theme === 'dark' ? 'light' : 'dark', true);
 }
 
 function endGame() {
@@ -276,6 +309,7 @@ function init() {
 
 document.addEventListener('keydown', e => {
   if (e.code === 'KeyP') { togglePause(); return; }
+  if (e.code === 'KeyT') { toggleTheme(); return; }
   if (paused || gameOver) return;
   switch (e.code) {
     case 'ArrowLeft':
@@ -300,5 +334,12 @@ document.addEventListener('keydown', e => {
 });
 
 restartBtn.addEventListener('click', init);
+themeToggle.addEventListener('click', () => {
+  toggleTheme();
+  themeToggle.blur(); // evita que Espacio vuelva a activar el interruptor
+});
 
+let savedTheme = 'dark';
+try { savedTheme = localStorage.getItem(THEME_KEY) || 'dark'; } catch (_) {}
+applyTheme(savedTheme, false);
 init();
