@@ -286,6 +286,8 @@ function loop(ts) {
     }
   }
   draw();
+  // endGame() cancela un frame que ya está en ejecución: no re-agendar el loop
+  if (gameOver || paused) return;
   animId = requestAnimationFrame(loop);
 }
 
